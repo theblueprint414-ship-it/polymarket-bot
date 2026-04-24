@@ -17,8 +17,8 @@ logging.basicConfig(
 )
 
 load_dotenv(os.path.expanduser("~/.env_polymarket"))
-with open(os.path.expanduser("~/.polymarket_key"), "r") as f:
-    pk = f.read().strip()
+
+pk = os.getenv("POLY_PRIVATE_KEY")
 
 creds = ApiCreds(
     api_key=os.getenv("POLY_API_KEY"),
@@ -106,7 +106,6 @@ def execute_trade(token_id, amount, question, direction):
         trade_count += 1
         msg = f"✅ עסקה #{trade_count} | {direction} ${amount} | {question[:50]}"
         log(msg)
-        log(f"   תגובה: {resp}")
         return True
     except Exception as e:
         log(f"❌ שגיאה: {e}")
@@ -118,7 +117,7 @@ def scan():
     log(f"\n[{now}] סריקה מתחילה...")
 
     if daily_pnl <= -MAX_DAILY_LOSS:
-        log(f"⛔ הפסד יומי הגיע ל-${abs(daily_pnl)} — הבוט עוצר להיום")
+        log(f"⛔ הפסד יומי ${abs(daily_pnl)} — עוצר להיום")
         return
 
     markets = get_all_markets()
@@ -175,7 +174,7 @@ def scan():
         size = kelly_size(abs(o["edge"]), MAX_PER_TRADE)
 
         log(f"שוק: {o['question'][:60]}")
-        log(f"Poly: {o['yes']:.1f}% | Meta: {o['meta']:.1f}% | Edge: {o['edge']:.1f}% | התאמה: {o['match']:.0%} | גודל: ${size}")
+        log(f"Poly: {o['yes']:.1f}% | Meta: {o['meta']:.1f}% | Edge: {o['edge']:.1f}%")
 
         if o["edge"] > 0:
             token_id = tokens[0]
@@ -198,7 +197,7 @@ def reset_daily():
     traded_today = set()
     daily_pnl = 0
     trade_count = 0
-    log("🔄 איפוס יומי — הבוט מוכן ליום חדש")
+    log("🔄 איפוס יומי")
 
 def scheduler():
     import schedule
@@ -208,15 +207,13 @@ def scheduler():
         schedule.run_pending()
         time.sleep(30)
 
-log("🤖 בוט Polymarket עילית מופעל")
-log(f"הגדרות: מקסימום לעסקה ${MAX_PER_TRADE} | מינימום edge {MIN_EDGE}% | עצירה יומית ${MAX_DAILY_LOSS}")
-log("="*50)
+log("🤖 בוט מופעל")
+log(f"מקסימום לעסקה: ${MAX_PER_TRADE} | edge מינימלי: {MIN_EDGE}% | עצירה יומית: ${MAX_DAILY_LOSS}")
 
 scan()
 
 t = threading.Thread(target=scheduler, daemon=True)
 t.start()
 
-log("\nהבוט פועל 24/7 — Ctrl+C לעצירה")
 while True:
     time.sleep(60)
