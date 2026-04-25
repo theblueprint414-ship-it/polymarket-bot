@@ -3,3 +3,6 @@ python-dotenv
 schedule
 py-clob-client
 websocket-client
+numpy
+pandas
+scipy
